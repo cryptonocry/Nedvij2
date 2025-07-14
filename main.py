@@ -23,13 +23,16 @@ class GalleryState(StatesGroup):
 # Авторизация через GOOGLE_APPLICATION_CREDENTIALS
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if not creds_path or not os.path.exists(creds_path):
-        raise ValueError("Файл ключа не найден: GOOGLE_APPLICATION_CREDENTIALS = " + str(creds_path))
-    creds = Credentials.from_service_account_file(creds_path, scopes=scope)
-    client = gspread.authorize(creds)
-    sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
-    return sheet
+    path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")  # теперь путь к файлу, а не base64
+    if not path or not os.path.exists(path):
+        raise Exception(f"Файл по пути {path} не найден.")
+    try:
+        creds = Credentials.from_service_account_file(path, scopes=scope)
+        client = gspread.authorize(creds)
+        sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
+        return sheet
+    except Exception as e:
+        raise Exception(f"Ошибка авторизации в Google Sheets: {str(e)}")
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
