@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: telegram-bot
-    runtime: python
-    buildCommand: ""
-    startCommand: python main.py
