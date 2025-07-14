@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: telegram-bot
+    runtime: python
+    buildCommand: ""
+    startCommand: python main.py
+    envVars:
+      - key: BOT_TOKEN
+        value: 7665240651:AAHbJ4fBrNQxwcLFO-J1KEHGLTe18q4CaQ4
+      - key: ADMIN_ID
+        value: "280665761"
