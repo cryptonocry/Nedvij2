@@ -7,8 +7,6 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 import os
 import datetime
 import gspread
-import base64
-import json
 from google.oauth2.service_account import Credentials
 
 TOKEN = os.getenv("BOT_TOKEN")
@@ -22,25 +20,16 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 class GalleryState(StatesGroup):
     viewing = State()
 
-# Авторизация в Google Sheets через переменную окружения GOOGLE_CREDENTIALS
+# Авторизация через GOOGLE_APPLICATION_CREDENTIALS
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    google_credentials = os.getenv("GOOGLE_CREDENTIALS")
-    if not google_credentials:
-        raise ValueError("Переменная окружения GOOGLE_CREDENTIALS не установлена или пуста.")
-    try:
-        # Декодируем base64
-        decoded_bytes = base64.b64decode(google_credentials)
-        # Преобразуем в строку с заменой ошибок и обработкой экранирования
-        decoded_str = decoded_bytes.decode('utf-8', errors='replace')
-        # Исправляем возможные проблемы с экранированием
-        creds_dict = json.loads(decoded_str.replace('\\n', '\n').replace('\\\\', '\\'))
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-        client = gspread.authorize(creds)
-        sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
-        return sheet
-    except Exception as e:
-        raise Exception(f"Ошибка авторизации в Google Sheets: {str(e)}")
+    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not creds_path or not os.path.exists(creds_path):
+        raise ValueError("Файл ключа не найден: GOOGLE_APPLICATION_CREDENTIALS = " + str(creds_path))
+    creds = Credentials.from_service_account_file(creds_path, scopes=scope)
+    client = gspread.authorize(creds)
+    sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
+    return sheet
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
@@ -159,7 +148,6 @@ async def handle_user_input(message: types.Message):
     await message.answer("Спасибо! Мы получили ваше сообщение.", reply_markup=main_menu(message.from_user.id))
 
 if __name__ == "__main__":
-    print("DEBUG: GOOGLE_CREDENTIALS =", repr(os.getenv("GOOGLE_CREDENTIALS")))
     try:
         sheet = get_sheet()
         values = sheet.get_all_values()
@@ -169,4 +157,3 @@ if __name__ == "__main__":
         print(f"❌ Ошибка: {err}")
 
     executor.start_polling(dp)
-
